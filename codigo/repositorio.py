@@ -2,7 +2,7 @@ from modelos import Aluno, Campus, Curso, Disciplina, Horario, Monitor, Reserva
 
 
 class RepositorioMemoria:
- # Banco de dados subtitui aqui futuramente, mantendo os mesmos métodos
+ # Banco de dados substitui aqui futuramente, mantendo os mesmos métodos
 
     def __init__(self) -> None:
         self._campus: dict[str, Campus] = {}

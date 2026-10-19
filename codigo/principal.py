@@ -22,7 +22,8 @@ def traduzir_entrada(entrada: str, mensagem: Mensagem) -> str:
 
 def main() -> None:
     # Adaptador da api do whatsapp entraria aqui
-    bot = Bot(repositorio, Agenda(repositorio))
+    repositorio = montar_repositorio(datetime.now())
+    bot =Bot(repositorio, Agenda(repositorio))
     print("Simulação do bot de monitorias da UTFPR. Digite o número da opção, ou sair para encerrar.")
 
     mensagem = bot.responder(TELEFONE_DE_EXEMPLO, "oi", datetime.now())
