@@ -60,7 +60,7 @@ class TestCriterio5LimiteSemanal(unittest.TestCase):
         self.reservar("qua")
         bot = Bot(self.repositorio, self.agenda)
 
-        ir_ate_horarios(bot, TELEFONE, LIMITES)
+        ir_ate_horarios(bot, TELEFONE, LIMITES, "sex 23/10")
         resposta = bot.responder(TELEFONE, "sex", AGORA)
         self.assertIn("limite de 2 reservas por semana", resposta.texto)
         self.assertEqual(len(self.repositorio.reservas_do_aluno(TELEFONE)), 2)

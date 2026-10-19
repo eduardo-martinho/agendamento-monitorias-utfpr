@@ -4,6 +4,7 @@ from repositorio import RepositorioMemoria
 
 ANTECEDENCIA_MINIMA = timedelta(hours=1)
 LIMITE_SEMANAL = 2
+MAXIMO_DIAS = 30
 
 
 class ErroReserva(Exception):
@@ -12,7 +13,7 @@ class ErroReserva(Exception):
 
 class HorarioIndisponivel(ErroReserva):
     def __init__(self) -> None:
-        super().__init__("Esse horário não está mais disponível. Escolha outro horário.")
+        super().__init__("Esse horário não está mais disponível.")
 
 
 class LimiteSemanalAtingido(ErroReserva):
@@ -41,6 +42,21 @@ class Agenda:
             if self._aceita_reserva(horario, assunto, agora)
         ]
         return sorted(horarios, key=lambda horario: horario.inicio)
+
+    def dias_disponiveis(self, disciplina: str, assunto: str, agora: datetime) -> list[date]:
+        """Os primeiros dias que têm pelo menos um horário livre, até MAXIMO_DIAS dias."""
+        dias: list[date] = []
+        for horario in self.horarios_disponiveis(disciplina, assunto, agora):
+            if horario.inicio.date() not in dias:
+                dias.append(horario.inicio.date())
+        return dias[:MAXIMO_DIAS]
+
+    def horarios_do_dia(self, disciplina: str, assunto: str, dia: date, agora: datetime) -> list[Horario]:
+        return [
+            horario
+            for horario in self.horarios_disponiveis(disciplina, assunto, agora)
+            if horario.inicio.date() == dia
+        ]
 
     def reservar(self, telefone: str, horario: str, assunto: str, agora: datetime) -> Reserva:
         # confere tudo antes de gravar

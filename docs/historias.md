@@ -7,7 +7,7 @@ O sistema agenda as monitorias da UTFPR, e o aluno usa tudo por um bot de WhatsA
 Como aluno, eu quero escolher pelo bot o campus, o curso, a disciplina e o assunto da minha dúvida e reservar um horário livre para ser atendido sem precisar combinar com o monitor por mensagem.
 
 Critérios de aceitação:
-1. O bot pergunta campus, curso, disciplina, assunto e horário, nessa ordem, sempre com uma lista de opções para marcar, como as listas do WhatsApp. Se a resposta não for uma das opções da lista, o bot recusa e repete a pergunta.
+1. O bot pergunta campus, curso, disciplina, assunto, dia e horário, nessa ordem, sempre com uma lista de opções para marcar, como as listas do WhatsApp. Se a resposta não for uma das opções da lista, o bot recusa e repete a pergunta. <!-- Mudança do commit 4 para o 5: separei "horarios" em "dias" e "horarios" por ficar menos confuso e para contornar a limitação de 10 opções do WhatsApp. -->
 2. O bot só oferece horários da disciplina escolhida que não foram cancelados pelo monitor e que começam pelo menos 1 hora depois do momento da conversa.
 3. Se o monitor atende um aluno por vez, o horário que já tem reserva não aparece. Se ele atende em grupo, o horário que já tem reserva só aparece para quem escolheu o mesmo assunto, e só enquanto houver vaga.
 4. Quando o aluno escolhe o horário, a reserva fica gravada no telefone dele (o registro do aluno é criado na primeira reserva) e o bot confirma a disciplina, o monitor, o dia, o horário e a sala.

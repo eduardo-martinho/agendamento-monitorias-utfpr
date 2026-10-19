@@ -60,7 +60,7 @@ def codigo_por_titulo(mensagem: Mensagem, titulo: str) -> str:
     raise AssertionError(f"A opção {titulo!r} não está na lista: {titulos(mensagem)}")
 
 
-def ir_ate_horarios(
+def ir_ate_dias(
     bot: Bot,
     telefone: str,
     assunto: str,
@@ -71,3 +71,15 @@ def ir_ate_horarios(
     for titulo in ["Apucarana", "Engenharia de Computação", disciplina, assunto]:
         mensagem = bot.responder(telefone, codigo_por_titulo(mensagem, titulo), agora)
     return mensagem
+
+
+def ir_ate_horarios(
+    bot: Bot,
+    telefone: str,
+    assunto: str,
+    dia: str,
+    agora: datetime = AGORA,
+    disciplina: str = NOME_CALCULO,
+) -> Mensagem:
+    mensagem = ir_ate_dias(bot, telefone, assunto, agora, disciplina)
+    return bot.responder(telefone, codigo_por_titulo(mensagem, dia), agora)

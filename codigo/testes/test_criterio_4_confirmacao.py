@@ -17,7 +17,7 @@ class TestCriterio4Confirmacao(unittest.TestCase):
         self.bot = Bot(self.repositorio, self.agenda)
 
     def test_reserva_fica_gravada_no_telefone_do_aluno(self) -> None:
-        ir_ate_horarios(self.bot, TELEFONE, LIMITES)
+        ir_ate_horarios(self.bot, TELEFONE, LIMITES, "qua 21/10")
         self.bot.responder(TELEFONE, "ana1", AGORA)
 
         reservas = self.repositorio.reservas_do_aluno(TELEFONE)
@@ -27,19 +27,19 @@ class TestCriterio4Confirmacao(unittest.TestCase):
 
     def test_aluno_e_registrado_pelo_telefone_na_primeira_reserva(self) -> None:
         self.assertIsNone(self.repositorio.buscar_aluno(TELEFONE))
-        ir_ate_horarios(self.bot, TELEFONE, LIMITES)
+        ir_ate_horarios(self.bot, TELEFONE, LIMITES, "qua 21/10")
         self.bot.responder(TELEFONE, "ana1", AGORA)
         self.assertIsNotNone(self.repositorio.buscar_aluno(TELEFONE))
 
     def test_confirmacao_traz_disciplina_monitor_dia_horario_e_sala(self) -> None:
-        ir_ate_horarios(self.bot, TELEFONE, LIMITES)
+        ir_ate_horarios(self.bot, TELEFONE, LIMITES, "qua 21/10")
         confirmacao = self.bot.responder(TELEFONE, "ana1", AGORA)
 
         for trecho in [NOME_CALCULO, "Ana Souza", "21/10/2026", "14:30", "E203"]:
             self.assertIn(trecho, confirmacao.texto)
 
     def test_horario_individual_pego_por_outro_aluno_antes_da_confirmacao_e_recusado(self) -> None:
-        ir_ate_horarios(self.bot, TELEFONE, LIMITES)
+        ir_ate_horarios(self.bot, TELEFONE, LIMITES, "qua 21/10")
         self.agenda.reservar(OUTRO_TELEFONE, "ana1", LIMITES, AGORA)
 
         resposta = self.bot.responder(TELEFONE, "ana1", AGORA)

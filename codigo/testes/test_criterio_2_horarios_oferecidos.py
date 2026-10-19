@@ -1,8 +1,18 @@
 import unittest
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from agenda import Agenda
 from bot import Bot
-from testes.auxiliares import AGORA, CALCULO, LIMITES, adicionar_horario, codigos, ir_ate_horarios, montar_repositorio
+from testes.auxiliares import (
+    AGORA,
+    CALCULO,
+    LIMITES,
+    adicionar_horario,
+    codigo_por_titulo,
+    codigos,
+    ir_ate_dias,
+    montar_repositorio,
+    titulos,
+)
 
 
 def codigos_dos_horarios(agenda: Agenda) -> list[str]:
@@ -46,8 +56,24 @@ class TestCriterio2HorariosOferecidos(unittest.TestCase):
         adicionar_horario(self.repositorio, "poo", "carla", AGORA + timedelta(days=1))
         bot = Bot(self.repositorio, self.agenda)
 
-        mensagem = ir_ate_horarios(bot, "5543999990001", LIMITES)
+        mensagem = ir_ate_dias(bot, "5543999990001", LIMITES)
+        self.assertEqual(titulos(mensagem), ["ter 20/10"])
+        mensagem = bot.responder("5543999990001", codigo_por_titulo(mensagem, "ter 20/10"), AGORA)
         self.assertEqual(codigos(mensagem), ["livre"])
+
+    def test_dia_so_com_horario_cancelado_nao_aparece(self) -> None:
+        adicionar_horario(self.repositorio, "ter", "ana", datetime(2026, 10, 20, 14, 0), cancelado=True)
+        adicionar_horario(self.repositorio, "qua", "ana", datetime(2026, 10, 21, 14, 0))
+        self.assertEqual(self.agenda.dias_disponiveis(CALCULO, LIMITES, AGORA), [date(2026, 10, 21)])
+
+    def test_aparecem_so_os_30_primeiros_dias_com_vaga(self) -> None:
+        for numero in range(41):
+            inicio = datetime(2026, 10, 20, 14, 0) + timedelta(days=2 * numero)
+            adicionar_horario(self.repositorio, f"h{numero}", "ana", inicio, cancelado=numero == 5)
+        dias = self.agenda.dias_disponiveis(CALCULO, LIMITES, AGORA)
+        self.assertEqual(len(dias), 30)
+        self.assertNotIn(date(2026, 10, 30), dias)
+        self.assertEqual(dias[-1], date(2026, 12, 19))
 
 
 if __name__ == "__main__":
