@@ -3,6 +3,11 @@ from datetime import datetime, timedelta
 
 DURACAO_ATENDIMENTO = timedelta(minutes=30)
 
+# Marca se o aluno faltou ou não (H3).
+PRESENTE = "presente"
+FALTA = "falta"
+FALTA_JUSTIFICADA = "falta justificada"
+
 
 @dataclass
 class Campus:
@@ -55,6 +60,7 @@ class Reserva:
     telefone: str
     assunto: str
     cancelada_pelo_monitor: bool = False
+    comparecimento: str | None = None
 
 
 @dataclass

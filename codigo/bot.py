@@ -52,6 +52,10 @@ class Bot:
 
         conversa.escolhas[conversa.etapa] = resposta
         conversa.pagina = 0
+        if conversa.etapa == "disciplina":
+            motivo = self._agenda.motivo_de_bloqueio(telefone, resposta, agora)
+            if motivo:
+                return self._perguntar(conversa, agora, motivo)
         if conversa.etapa == "horario":
             return self._reservar(telefone, conversa, agora)
         conversa.etapa = ETAPAS[ETAPAS.index(conversa.etapa) + 1]

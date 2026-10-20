@@ -1,9 +1,11 @@
 from datetime import date, datetime, timedelta
-from modelos import Aluno, Aviso, Horario, Reserva
+from modelos import FALTA, Aluno, Aviso, Horario, Reserva
 from repositorio import RepositorioMemoria
 
 ANTECEDENCIA_MINIMA = timedelta(hours=1)
 LIMITE_SEMANAL = 2
+LIMITE_SEMANAL_DEPOIS_DA_FALTA = 1
+FALTAS_PARA_BLOQUEIO = 2
 MAXIMO_DIAS = 30
 
 
@@ -17,25 +19,54 @@ class HorarioIndisponivel(ErroReserva):
 
 
 class LimiteSemanalAtingido(ErroReserva):
-    def __init__(self) -> None:
+    def __init__(self, limite: int = LIMITE_SEMANAL) -> None:
+        if limite == LIMITE_SEMANAL:
+            super().__init__(
+                f"Você já tem {LIMITE_SEMANAL} reservas nessa disciplina na semana desse horário. "
+                f"O limite de {LIMITE_SEMANAL} reservas por semana (de segunda a domingo) vale para cada disciplina."
+            )
+        else:
+            super().__init__(
+                "Você já tem uma reserva nessa disciplina na semana desse horário. Depois de uma falta sem "
+                f"justificativa, o seu limite nela passou a ser de {limite} reserva por semana neste semestre."
+            )
+
+
+class DisciplinaBloqueada(ErroReserva):
+    def __init__(self, disciplina: str) -> None:
         super().__init__(
-            f"Você já tem {LIMITE_SEMANAL} reservas nessa disciplina na semana desse horário. "
-            f"O limite de {LIMITE_SEMANAL} reservas por semana (de segunda a domingo) vale para cada disciplina."
+            f"Você teve {FALTAS_PARA_BLOQUEIO} faltas sem justificativa em monitorias de {disciplina} neste "
+            "semestre e não pode mais reservar nessa disciplina até o fim do semestre."
         )
 
 
-class ErroCancelamento(Exception):
-    """Motivo pelo qual o monitor não conseguiu cancelar o horário."""
+class ErroDoMonitor(Exception):
+    """Motivo pelo qual o sistema recusou o que o monitor tentou fazer."""
 
 
-class HorarioJaComecou(ErroCancelamento):
+class HorarioJaComecou(ErroDoMonitor):
     def __init__(self) -> None:
         super().__init__("Esse horário já começou e não pode mais ser cancelado.")
 
 
-class HorarioDeOutroMonitor(ErroCancelamento):
+class HorarioDeOutroMonitor(ErroDoMonitor):
     def __init__(self) -> None:
         super().__init__("Esse horário não é seu.")
+
+
+class HorarioAindaNaoComecou(ErroDoMonitor):
+    def __init__(self) -> None:
+        super().__init__("Presença e falta só podem ser marcadas depois que o horário começa.")
+
+
+class ReservaNaoEncontrada(ErroDoMonitor):
+    def __init__(self) -> None:
+        super().__init__("Esse aluno não tem reserva nesse horário.")
+
+
+def semestre(dia: datetime) -> tuple[int, int]:
+    # aqui precisa colocar quando o semestre começa e acaba
+    return dia.year, 1 if dia.month <= 7 else 2
 
 
 def inicio_da_semana(dia: datetime) -> date:
@@ -76,9 +107,12 @@ class Agenda:
         escolhido = self._repositorio.buscar_horario(horario)
         if escolhido is None or not self._aceita_reserva(escolhido, assunto, agora):
             raise HorarioIndisponivel()
-        # aqui entra penalidade por falta futuramente
-        if self._reservas_na_semana(telefone, escolhido) >= LIMITE_SEMANAL:
-            raise LimiteSemanalAtingido()
+        faltas = self._faltas_no_semestre(telefone, escolhido.disciplina, escolhido.inicio)
+        if faltas >= FALTAS_PARA_BLOQUEIO:
+            raise DisciplinaBloqueada(self._repositorio.buscar_disciplina(escolhido.disciplina).nome)
+        limite = LIMITE_SEMANAL_DEPOIS_DA_FALTA if faltas > 0 else LIMITE_SEMANAL
+        if self._reservas_na_semana(telefone, escolhido) >= limite:
+            raise LimiteSemanalAtingido(limite)
 
         if self._repositorio.buscar_aluno(telefone) is None:
             self._repositorio.adicionar_aluno(Aluno(telefone))
@@ -107,6 +141,37 @@ class Agenda:
                 avisos.append(Aviso(reserva.telefone, texto))
         # Aqui iria: mandar cada aviso pelo adaptador do WhatsApp.
         return avisos
+
+    def motivo_de_bloqueio(self, telefone: str, disciplina: str, agora: datetime) -> str | None:
+        """bloqueio por faltas (H3)."""
+        if self._faltas_no_semestre(telefone, disciplina, agora) >= FALTAS_PARA_BLOQUEIO:
+            return str(DisciplinaBloqueada(self._repositorio.buscar_disciplina(disciplina).nome))
+        return None
+
+    def registrar_comparecimento(self, monitor: str, horario: str, telefone: str, situacao: str, agora: datetime) -> None:
+        """marca se o aluno faltou ou não  (H3)."""
+        escolhido = self._repositorio.buscar_horario(horario)
+        if escolhido is None or escolhido.monitor != monitor:
+            raise HorarioDeOutroMonitor()
+        if agora < escolhido.inicio:
+            raise HorarioAindaNaoComecou()
+        for reserva in self._repositorio.reservas_do_horario(horario):
+            if reserva.telefone == telefone and not reserva.cancelada_pelo_monitor:
+                reserva.comparecimento = situacao
+                return
+        raise ReservaNaoEncontrada()
+
+    def _faltas_no_semestre(self, telefone: str, disciplina: str, dia: datetime) -> int:
+        total = 0
+        for reserva in self._repositorio.reservas_do_aluno(telefone):
+            horario = self._repositorio.buscar_horario(reserva.horario)
+            if (
+                reserva.comparecimento == FALTA
+                and horario.disciplina == disciplina
+                and semestre(horario.inicio) == semestre(dia)
+            ):
+                total += 1
+        return total
 
     def _aceita_reserva(self, horario: Horario, assunto: str, agora: datetime) -> bool:
         if horario.cancelado or horario.inicio < agora + ANTECEDENCIA_MINIMA:
