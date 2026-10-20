@@ -1,4 +1,4 @@
-from modelos import Aluno, Campus, Curso, Disciplina, Horario, Monitor, Reserva
+from modelos import Aluno, Campus, Curso, Disciplina, Horario, Monitor, Professor, Reserva
 
 
 class RepositorioMemoria:
@@ -8,6 +8,7 @@ class RepositorioMemoria:
         self._campus: dict[str, Campus] = {}
         self._cursos: dict[str, Curso] = {}
         self._disciplinas: dict[str, Disciplina] = {}
+        self._professores: dict[str, Professor] = {}
         self._monitores: dict[str, Monitor] = {}
         self._horarios: dict[str, Horario] = {}
         self._alunos: dict[str, Aluno] = {}
@@ -21,6 +22,9 @@ class RepositorioMemoria:
 
     def adicionar_disciplina(self, disciplina: Disciplina) -> None:
         self._disciplinas[disciplina.codigo] = disciplina
+
+    def adicionar_professor(self, professor: Professor) -> None:
+        self._professores[professor.codigo] = professor
 
     def adicionar_monitor(self, monitor: Monitor) -> None:
         # cadastro de monitor e aceite pelo professor entra aqui depois
@@ -43,6 +47,9 @@ class RepositorioMemoria:
 
     def disciplinas_do_curso(self, curso: str) -> list[Disciplina]:
         return [disciplina for disciplina in self._disciplinas.values() if disciplina.curso == curso]
+
+    def disciplinas_do_professor(self, professor: str) -> list[Disciplina]:
+        return [disciplina for disciplina in self._disciplinas.values() if disciplina.professor == professor]
 
     def horarios_da_disciplina(self, disciplina: str) -> list[Horario]:
         return [horario for horario in self._horarios.values() if horario.disciplina == disciplina]

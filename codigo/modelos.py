@@ -28,6 +28,13 @@ class Disciplina:
     nome: str
     curso: str
     assuntos: list[str]
+    professor: str | None = None
+
+
+@dataclass
+class Professor:
+    codigo: str
+    nome: str
 
 
 @dataclass
