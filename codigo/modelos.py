@@ -54,6 +54,14 @@ class Reserva:
     horario: str
     telefone: str
     assunto: str
+    cancelada_pelo_monitor: bool = False
+
+
+@dataclass
+class Aviso:
+
+    telefone: str
+    texto: str
 
 
 @dataclass

@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from modelos import Aluno, Horario, Reserva
+from modelos import Aluno, Aviso, Horario, Reserva
 from repositorio import RepositorioMemoria
 
 ANTECEDENCIA_MINIMA = timedelta(hours=1)
@@ -24,8 +24,21 @@ class LimiteSemanalAtingido(ErroReserva):
         )
 
 
+class ErroCancelamento(Exception):
+    """Motivo pelo qual o monitor não conseguiu cancelar o horário."""
+
+
+class HorarioJaComecou(ErroCancelamento):
+    def __init__(self) -> None:
+        super().__init__("Esse horário já começou e não pode mais ser cancelado.")
+
+
+class HorarioDeOutroMonitor(ErroCancelamento):
+    def __init__(self) -> None:
+        super().__init__("Esse horário não é seu.")
+
+
 def inicio_da_semana(dia: datetime) -> date:
-    """Segunda-feira da semana do dia."""
     return dia.date() - timedelta(days=dia.weekday())
 
 
@@ -73,6 +86,28 @@ class Agenda:
         self._repositorio.adicionar_reserva(reserva)
         return reserva
 
+    def cancelar_horario(self, monitor: str, horario: str, agora: datetime) -> list[Aviso]:
+        """(H2, cancela o horário e avisa o aluno que tinha reservado)"""
+        escolhido = self._repositorio.buscar_horario(horario)
+        if escolhido is None or escolhido.monitor != monitor:
+            raise HorarioDeOutroMonitor()
+        if agora >= escolhido.inicio:
+            raise HorarioJaComecou()
+
+        escolhido.cancelado = True
+        disciplina = self._repositorio.buscar_disciplina(escolhido.disciplina)
+        texto = (
+            f"Sua monitoria de {disciplina.nome} em {escolhido.inicio:%d/%m/%Y} às {escolhido.inicio:%H:%M} "
+            "foi cancelada pelo monitor. Essa reserva não conta no seu limite da semana."
+        )
+        avisos = []
+        for reserva in self._repositorio.reservas_do_horario(horario):
+            if not reserva.cancelada_pelo_monitor:
+                reserva.cancelada_pelo_monitor = True
+                avisos.append(Aviso(reserva.telefone, texto))
+        # Aqui iria: mandar cada aviso pelo adaptador do WhatsApp.
+        return avisos
+
     def _aceita_reserva(self, horario: Horario, assunto: str, agora: datetime) -> bool:
         if horario.cancelado or horario.inicio < agora + ANTECEDENCIA_MINIMA:
             return False
@@ -85,10 +120,11 @@ class Agenda:
         return reservas[0].assunto == assunto and len(reservas) < monitor.vagas_por_horario
 
     def _reservas_na_semana(self, telefone: str, horario: Horario) -> int:
-        # (H2) entra aqui
         semana = inicio_da_semana(horario.inicio)
         total = 0
         for reserva in self._repositorio.reservas_do_aluno(telefone):
+            if reserva.cancelada_pelo_monitor:
+                continue
             outro = self._repositorio.buscar_horario(reserva.horario)
             if outro.disciplina == horario.disciplina and inicio_da_semana(outro.inicio) == semana:
                 total += 1
