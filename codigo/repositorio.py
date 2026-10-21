@@ -51,6 +51,12 @@ class RepositorioMemoria:
     def disciplinas_do_professor(self, professor: str) -> list[Disciplina]:
         return [disciplina for disciplina in self._disciplinas.values() if disciplina.professor == professor]
 
+    def listar_monitores(self) -> list[Monitor]:
+        return list(self._monitores.values())
+
+    def horarios_do_monitor(self, monitor: str) -> list[Horario]:
+        return [horario for horario in self._horarios.values() if horario.monitor == monitor]
+
     def horarios_da_disciplina(self, disciplina: str) -> list[Horario]:
         return [horario for horario in self._horarios.values() if horario.disciplina == disciplina]
 
