@@ -1,8 +1,17 @@
 from datetime import date, datetime, time, timedelta
-from modelos import Campus, Curso, Disciplina, Horario, Monitor, Reserva
+from modelos import FALTA, PRESENTE, Campus, Curso, Disciplina, Horario, Monitor, Professor, Reserva
 from repositorio import RepositorioMemoria
 
 SEMANAS_DE_HORARIOS = 4
+SEMANAS_DE_HISTORICO = 2
+
+PROFESSORES = [
+    Professor("marcos", "Marcos Oliveira"),
+    Professor("renata", "Renata Lopes"),
+    Professor("lucia", "Lúcia Ramos"),
+]
+
+RESPONSAVEIS = {"CGCO1A": "marcos", "FTCO2A": "renata", "POCO4A": "lucia", "EDCO3A": "lucia"}
 CAMPUS = [
     Campus("APU", "Apucarana"),
     Campus("LON", "Londrina"),
@@ -121,11 +130,15 @@ def montar_repositorio(agora: datetime) -> RepositorioMemoria:
         repositorio.adicionar_curso(curso)
     for disciplina in DISCIPLINAS:
         repositorio.adicionar_disciplina(disciplina)
+    for professor in PROFESSORES:
+        repositorio.adicionar_professor(professor)
+    for codigo, professor in RESPONSAVEIS.items():
+        repositorio.buscar_disciplina(codigo).professor = professor
     for monitor in MONITORES:
         repositorio.adicionar_monitor(monitor)
 
     segunda: date = agora.date() - timedelta(days=agora.weekday())
-    for semana in range(SEMANAS_DE_HORARIOS):
+    for semana in range(-SEMANAS_DE_HISTORICO, SEMANAS_DE_HORARIOS):
         for codigo_monitor, dia_da_semana, hora, sala in GRADE_SEMANAL:
             dia = segunda + timedelta(weeks=semana, days=dia_da_semana)
             inicio = datetime.combine(dia, hora)
@@ -133,8 +146,30 @@ def montar_repositorio(agora: datetime) -> RepositorioMemoria:
             codigo = f"{codigo_monitor}-{inicio:%Y%m%d-%H%M}"
             repositorio.adicionar_horario(Horario(codigo, monitor.disciplina, codigo_monitor, inicio, sala))
 
+    _preparar_historico(repositorio, agora)
     _preparar_exemplos(repositorio, agora)
     return repositorio
+
+
+def _preparar_historico(repositorio: RepositorioMemoria, agora: datetime) -> None:
+    passados = sorted(
+        (
+            horario
+            for monitor in repositorio.listar_monitores()
+            for horario in repositorio.horarios_do_monitor(monitor.codigo)
+            if horario.inicio < agora
+        ),
+        key=lambda horario: (horario.inicio, horario.codigo),
+    )
+    for numero, horario in enumerate(passados):
+        if numero % 6 == 5:
+            continue
+        assuntos = repositorio.buscar_disciplina(horario.disciplina).assuntos
+        assunto = assuntos[(numero * 7) % len(assuntos)]
+        situacao = FALTA if numero % 5 == 3 else PRESENTE
+        repositorio.adicionar_reserva(Reserva(horario.codigo, f"55439777{numero:05d}", assunto, comparecimento=situacao))
+        if repositorio.buscar_monitor(horario.monitor).atende_em_grupo and numero % 2 == 0:
+            repositorio.adicionar_reserva(Reserva(horario.codigo, f"55439666{numero:05d}", assunto, comparecimento=PRESENTE))
 
 
 def _preparar_exemplos(repositorio: RepositorioMemoria, agora: datetime) -> None:

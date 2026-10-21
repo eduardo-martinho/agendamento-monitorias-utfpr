@@ -68,6 +68,6 @@ Arquivo `test_criterio_5_limite_semanal.py`.
 
 ## O que não foi coberto e por quê
 
-O programa principal (`codigo/principal.py`) não tem teste automático, porque só lê o teclado e mostra as mensagens no terminal, sem regra nenhuma. Foi testado à mão, percorrendo a conversa até a confirmação. Os dados de exemplo (`codigo/dados_exemplo.py`) também não têm teste: servem só para a execução manual, e os testes usam dados próprios e menores.
+O programa principal (`codigo/principal.py`) e as telas do monitor, do professor e da coordenação (`codigo/telas.py`) não têm teste automático, porque só leem o teclado e mostram o resultado no terminal, sem regra nenhuma. Foram testados à mão, percorrendo a conversa do bot até a confirmação e cada tela até o fim. Os dados de exemplo (`codigo/dados_exemplo.py`) também não têm teste: servem só para a execução manual, e os testes usam dados próprios e menores.
 
 A ligação com o WhatsApp não existe no protótipo, então não há teste de envio e recebimento de mensagens, nem do limite de caracteres que o WhatsApp impõe ao título de cada opção. Também não há teste de duas mensagens chegando ao mesmo tempo: o protótipo roda num processo só, com os dados em memória. O caso parecido que existe, outro aluno pegar o horário enquanto a conversa estava parada, está coberto no critério 4.

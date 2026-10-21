@@ -51,6 +51,9 @@ class RepositorioMemoria:
     def disciplinas_do_professor(self, professor: str) -> list[Disciplina]:
         return [disciplina for disciplina in self._disciplinas.values() if disciplina.professor == professor]
 
+    def listar_professores(self) -> list[Professor]:
+        return list(self._professores.values())
+
     def listar_monitores(self) -> list[Monitor]:
         return list(self._monitores.values())
 
